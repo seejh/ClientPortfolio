@@ -1,0 +1,2 @@
+C:\Users\see\Documents\Unreal Projects\MMOClient\Plugins\Libprotobuf\Intermediate\Build\Win64\UE4Editor\Development\Libprotobuf\Definitions.Libprotobuf.h
+C:\Users\see\Documents\Unreal Projects\MMOClient\Plugins\Libprotobuf\Source\Libprotobuf\Public\Libprotobuf.h
