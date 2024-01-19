@@ -14,6 +14,7 @@
 #include<Kismet/GameplayStatics.h>
 #include"MyGameInstance.h"
 #include"MyPlayerController.h"
+#include"MyMonster.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMMOClientCharacter
@@ -51,6 +52,7 @@ AMMOClientCharacter::AMMOClientCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+	
 }
 
 void AMMOClientCharacter::SetAttack(bool flag)
@@ -132,9 +134,10 @@ void AMMOClientCharacter::DoAttacked(int hp)
 
 	_hp = hp;
 	UMyGameInstance* instance = Cast<UMyGameInstance>(GetGameInstance());
-	if (_playerIndex == instance->_myPlayerIndex) {
+	
+	// 처맞은 게 내 캐릭이면 hp hud 변경
+	if (_playerIndex == instance->_myPlayerIndex)
 		instance->_controller->myHUDWidget->SetHPBar(_hp);
-	}
 
 	if (_hp <= 0) {
 		// TODO : Death
@@ -148,6 +151,7 @@ void AMMOClientCharacter::Attack()
 	// 충돌이 감지된 액터들 가져옴
 	TArray<UActorComponent*> actorComps;
 	TArray<AActor*> attackedChars;
+
 	this->GetComponents(actorComps);
 	for (auto actorComp : actorComps) {
 		USphereComponent* hitSphere = Cast<USphereComponent>(actorComp);
@@ -159,17 +163,31 @@ void AMMOClientCharacter::Attack()
 	
 	// 본인도 포함되어 있기 때문에, 본인 제외하고 하나라도 있으면, 즉 2명 이상이면
 	UMyGameInstance* instance = Cast<UMyGameInstance>(GetGameInstance());
-	TArray<PlayerInfo> victims;
+	TArray<ActorInfo> victims;
+
 	if (attackedChars.Num() >= 2) {
 		for (auto victim : attackedChars) {
-			// 캐릭터가 내 캐릭이면 패스
 			AMMOClientCharacter* victimChar = Cast<AMMOClientCharacter>(victim);
-			if (victimChar->_playerIndex == instance->_myPlayerIndex)
-				continue;
+			
+			// 플레이어
+			if (victimChar) {
+				// 플레이어가 나라면 패스
+				if (victimChar->_playerIndex == instance->_myPlayerIndex)
+					continue;
 
-			PlayerInfo info;
-			info.SetPlayerIndex(victimChar->_playerIndex);
-			victims.Add(info);
+				PlayerInfo info;
+				info.SetIndex(victimChar->_playerIndex);
+				victims.Add(info);
+			}
+			
+			// 몬스터
+			else {
+				AMyMonster* victimMon = Cast<AMyMonster>(victim);
+
+				MonsterInfo info;
+				//info.SetIndex(victimMon->_monsterIndex);
+				// victims.Add(info);
+			}
 		}
 	}
 

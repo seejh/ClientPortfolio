@@ -10,7 +10,6 @@ AMMOClientGameMode::AMMOClientGameMode()
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/BP_Player"));
 	if (PlayerPawnBPClass.Class != NULL)
 	{
-		UE_LOG(LogTemp, Error, TEXT("GameMode BP_Player not null"));
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
 }

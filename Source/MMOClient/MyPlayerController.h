@@ -13,14 +13,16 @@
 /*-------------------------------------------------------------------------------
 	PlayerInfo
 -------------------------------------------------------------------------------*/
-class PlayerInfo {
-public:
-	PlayerInfo() : _playerIndex(-1), _location(0.f, 0.f, 0.f), _rotation(0.f, 0.f, 0.f), _velocity(0.f, 0.f, 0.f), _isLogin(false), _hp(100), _ID("test") {
+enum ActorType { PLAYER, MONSTER };
 
-	}
-	
+class ActorInfo {
+public:
+	ActorInfo() : _actorType(ActorType::PLAYER), _index(-1), _location(0.f, 0.f, 0.f), _rotation(0.f, 0.f, 0.f), _velocity(0.f, 0.f, 0.f), _isLogin(false), _hp(100), _ID("test"), _actor(nullptr) {}
+	ActorInfo(ActorType type) : _actorType(type), _index(-1), _location(0.f, 0.f, 0.f), _rotation(0.f, 0.f, 0.f), _velocity(0.f, 0.f, 0.f), _isLogin(false), _hp(100), _ID("test"), _actor(nullptr) {}
+
 	// Setter
-	void SetPlayerIndex(uint64 playerIndex);
+	void SetIndex(uint64 playerIndex);
+	void SetActorType(ActorType type);
 	void SetLocation(FVector location);
 	void SetLocation(float x, float y, float z);
 	void SetRotation(FRotator rotation);
@@ -28,21 +30,22 @@ public:
 	void SetVelocity(FVector velocity);
 	void SetVelocity(float x, float y, float z);
 	void SetHP(float hp);
-	void SetActor(AMMOClientCharacter* character);
+	void SetActor(ACharacter* character);
 
 	// Getter
-	uint64 PlayerIndex();
+	uint64 GetIndex();
+	ActorType GetActorType();
 	FVector GetLocation();
 	FRotator GetRotation();
 	FVector GetVelocity();
 	float GetHP();
-	AMMOClientCharacter* GetActor();
+	ACharacter* GetActor();
 
-	void SetLogin(bool login);
-	bool IsLogin();
+	bool IsActor();
 public:
 	// 인덱스
-	uint64 _playerIndex;
+	uint64 _index;
+	ActorType _actorType;
 
 	// 위치정보
 	FVector _location;
@@ -55,9 +58,21 @@ public:
 	bool _needSpawn = false;
 	bool _isLogin = false;
 
-	AMMOClientCharacter* _actor;
+	ACharacter* _actor = nullptr;
 };
 
+class PlayerInfo : public ActorInfo {
+public:
+	PlayerInfo() : ActorInfo(ActorType::PLAYER) {}
+
+	void SetLogin(bool login);
+	bool IsLogin();
+};
+
+class MonsterInfo : public ActorInfo {
+public:
+	MonsterInfo() : ActorInfo(ActorType::MONSTER) {}
+};
 
 /*---------------------------------------------------------------------------------------------
 	MyPlayerController
@@ -84,9 +99,9 @@ public:
 	void UpdateMyPos();
 	void StartGame();
 
-	void MyPlayerAttack(TArray<PlayerInfo>& playerArray);
-	void PlayerAttack(PlayerInfo& attacker);
-	void PlayerAttacked(PlayerInfo& victim);
+	void MyPlayerAttack(TArray<ActorInfo>& playerArray);
+	void ActorAttack(ActorInfo& attacker);
+	void ActorAttacked(ActorInfo& victim);
 
 	void MyPlayerChat(FString& chatMessage);
 
@@ -94,17 +109,17 @@ public:
 		UpdateOutData
 	---------------------------------------------------------------------------*/
 	//void WorldUpdateOutData(PlayerInfo& playerInfo);
-	void SpawnUpdateOutData(PlayerInfo& playerInfo);
-	void ChatUpdateOutData(FString& chat);
-	void AttackUpdateOutData(TArray<PlayerInfo>& playerInfos);
+	void UpdateSpawnData(ActorInfo* playerInfo);
+	void UpdateChatData(FString& chat);
+	void UpdateAttackData(TArray<ActorInfo>& playerInfos);
 
 	/*---------------------------------------------------------------------------
 		UpdateInGame(In Tick Methods)
 	---------------------------------------------------------------------------*/
-	void WorldUpdateInGame(float DeltaSeconds);
-	void SpawnUpdateInGame();
-	void ChatUpdateInGame();
-	void AttackUpdateInGame();
+	void UpdateWorld(float DeltaSeconds);
+	void UpdateSpawn();
+	void UpdateChat();
+	void UpdateAttack();
 
 	/*---------------------------------------------------------------------------
 		Public Members
@@ -115,10 +130,11 @@ public:
 	UMyHUDWidget* myHUDWidget;
 	
 	TSubclassOf<class UObject> _bpCharacter;
+	TSubclassOf<class UObject> _bpMonster;
 public:
 	TQueue<FString, EQueueMode::Spsc> _chatQueue;
-	TQueue<PlayerInfo, EQueueMode::Spsc> _spawnQueue;
-	TQueue<TArray<PlayerInfo>> _attackQueue;
+	TQueue<ActorInfo, EQueueMode::Spsc> _spawnQueue;
+	TQueue<TArray<ActorInfo>> _attackQueue;
 
 	bool _tickFlag = false;
 	FTimerHandle _timerHandle;

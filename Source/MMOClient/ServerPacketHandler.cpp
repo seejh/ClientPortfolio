@@ -21,7 +21,7 @@ bool Handle_S_LOGIN(UMyGameInstance* instance, PROTOCOL::S_LOGIN fromPkt)
 		UE_LOG(LogTemp, Error, TEXT("Login to Server OK"));
 
 		// 내 플레이어 인덱스 설정
-		instance->_myPlayerIndex = fromPkt.player().playerid();
+		instance->_myPlayerIndex = fromPkt.actor().index();
 		
 		// EnterRoom 요청
 		PROTOCOL::C_ENTER_ROOM toPkt;
@@ -41,26 +41,40 @@ bool Handle_S_ENTER_ROOM(UMyGameInstance* instance, PROTOCOL::S_ENTER_ROOM fromP
 	if (fromPkt.success()) {
 		
 		// 접속한 것이 본인
-		if (fromPkt.player().playerid() == instance->_myPlayerIndex) {
+		if (fromPkt.actor().index() == instance->_myPlayerIndex) {
 			// 다음 맵으로 이동 (이동하면 PC가동)
 			instance->_loginWidget->GoNextLevel();
 		}
 
-		// 접속한 것이 타인
+		// 접속한 것이 타인 또는 타몬스터
 		else {
 			// 접속한 플레이어의 정보 추출
-			PROTOCOL::PLAYER player = fromPkt.player();
+			PROTOCOL::ACTOR protoActorInfo = fromPkt.actor();
 
-			// 플레이어 인포 정의
-			PlayerInfo playerInfo;
-			playerInfo.SetPlayerIndex(player.playerid());
-			playerInfo.SetLocation(player.locationx(), player.locationy(), player.locationz());
-			playerInfo.SetRotation(player.rotationyaw(), player.rotationpitch(), player.rotationroll());
-			playerInfo.SetHP(player.hp());
-			// TODO : set ID
+			// 플레이어
+			if (protoActorInfo.actortype() == PROTOCOL::PLAYER) {
+				// 플레이어 인포 정의
+				PlayerInfo playerInfo;
+				playerInfo.SetIndex(protoActorInfo.index());
+				playerInfo.SetLocation(protoActorInfo.locationx(), protoActorInfo.locationy(), protoActorInfo.locationz());
+				playerInfo.SetRotation(protoActorInfo.rotationyaw(), protoActorInfo.rotationpitch(), protoActorInfo.rotationroll());
+				playerInfo.SetHP(protoActorInfo.hp());
+				// TODO : set ID
 
-			// 업데이트 아웃 데이터(스폰)
-			instance->_controller->SpawnUpdateOutData(playerInfo);
+				// 업데이트 스폰 데이터
+				instance->_controller->UpdateSpawnData(&playerInfo);
+			}
+
+			// 몬스터
+			else {
+				MonsterInfo monsterInfo;
+				monsterInfo.SetIndex(protoActorInfo.index());
+				monsterInfo.SetLocation(protoActorInfo.locationx(), protoActorInfo.locationy(), protoActorInfo.locationz());
+				monsterInfo.SetRotation(protoActorInfo.rotationyaw(), protoActorInfo.rotationpitch(), protoActorInfo.rotationroll());
+				monsterInfo.SetHP(protoActorInfo.hp());
+
+				instance->_controller->UpdateSpawnData(&monsterInfo);
+			}
 		}
 	}
 
@@ -72,28 +86,45 @@ bool Handle_S_ENTER_ROOM(UMyGameInstance* instance, PROTOCOL::S_ENTER_ROOM fromP
 bool Handle_S_PLAYERLIST(UMyGameInstance* instance, PROTOCOL::S_PLAYERLIST fromPkt)
 {
 	// 목록에서 하나씩
-	for (int i = 0; i < fromPkt.players_size(); i++) {
+	for (int i = 0; i < fromPkt.actors_size(); i++) {
 		// 플레이어 정보 추출
-		PROTOCOL::PLAYER playerInfoProto = fromPkt.players(i);
+		PROTOCOL::ACTOR protoPlayerInfo = fromPkt.actors(i);
 		
 		// 추출된 게 자기라면 pass
-		if (playerInfoProto.playerid() == instance->_myPlayerIndex) {
+		if (protoPlayerInfo.index() == instance->_myPlayerIndex) {
 			continue;
 		}
 		
 		// 추출된 것이 남이라면
 		else {
 			// 플레이어 인포 정의
-			PlayerInfo info;
-			info.SetPlayerIndex(playerInfoProto.playerid());
-			info.SetLocation(playerInfoProto.locationx(), playerInfoProto.locationy(), playerInfoProto.locationz());
-			info.SetRotation(playerInfoProto.rotationyaw(), playerInfoProto.rotationpitch(), playerInfoProto.rotationroll());
-			info.SetHP(playerInfoProto.hp());
+			PlayerInfo playerInfo;
+			playerInfo.SetIndex(protoPlayerInfo.index());
+			playerInfo.SetLocation(protoPlayerInfo.locationx(), protoPlayerInfo.locationy(), protoPlayerInfo.locationz());
+			playerInfo.SetRotation(protoPlayerInfo.rotationyaw(), protoPlayerInfo.rotationpitch(), protoPlayerInfo.rotationroll());
+			playerInfo.SetHP(protoPlayerInfo.hp());
 			// TODO : set ID
 
-			// 업데이트 아웃 데이터(스폰)
-			instance->_controller->SpawnUpdateOutData(info);
+			// 업데이트 스폰 데이터
+			instance->_controller->UpdateSpawnData(&playerInfo);
 		}
+	}
+
+	return true;
+}
+
+bool Handle_S_MONSTERLIST(UMyGameInstance* instance, PROTOCOL::S_MONSTERLIST fromPkt)
+{
+	for (int i = 0; i < fromPkt.actors_size(); i++) {
+		PROTOCOL::ACTOR protoMonsterInfo = fromPkt.actors(i);
+
+		MonsterInfo monsterInfo;
+		monsterInfo.SetIndex(protoMonsterInfo.index());
+		monsterInfo.SetLocation(protoMonsterInfo.locationx(), protoMonsterInfo.locationy(), protoMonsterInfo.locationz());
+		monsterInfo.SetRotation(protoMonsterInfo.rotationyaw(), protoMonsterInfo.rotationpitch(), protoMonsterInfo.rotationroll());
+		monsterInfo.SetHP(protoMonsterInfo.hp());
+
+		instance->_controller->UpdateSpawnData(&monsterInfo);
 	}
 
 	return true;
@@ -102,55 +133,71 @@ bool Handle_S_PLAYERLIST(UMyGameInstance* instance, PROTOCOL::S_PLAYERLIST fromP
 bool Handle_S_MOVE(UMyGameInstance* instance, PROTOCOL::S_MOVE fromPkt)
 {
 	// 추출
-	PROTOCOL::PLAYER player = fromPkt.player();
-
-	// 플레이어 인포 정의
-	PlayerInfo info;
-	info.SetPlayerIndex(player.playerid());
-	info.SetLocation(player.locationx(), player.locationy(), player.locationz());
-	info.SetRotation(player.rotationyaw(), player.rotationpitch(), player.rotationroll());
-	info.SetVelocity(player.velocityx(), player.velocityy(), player.velocityz());
-
-	// TEST
-	PlayerInfo* playerInfo = instance->_intPlayerInfoMap.Find(info.PlayerIndex());
-	if (playerInfo->IsLogin()) {
-		playerInfo->SetLocation(info.GetLocation());
-		playerInfo->SetRotation(info.GetRotation());
-		playerInfo->SetVelocity(info.GetVelocity());
+	PROTOCOL::ACTOR protoActor = fromPkt.actor();
+	
+	// PLAYER
+	if (protoActor.actortype() == PROTOCOL::PLAYER) {
+		PlayerInfo* playerInfo = instance->FindPlayer(protoActor.index());
+		if (playerInfo) {
+			playerInfo->SetLocation(protoActor.locationx(), protoActor.locationy(), protoActor.locationz());
+			playerInfo->SetRotation(protoActor.rotationyaw(), protoActor.rotationpitch(), protoActor.rotationroll());
+			playerInfo->SetVelocity(protoActor.velocityx(), protoActor.velocityy(), protoActor.velocityz());
+		}
 	}
 
-	// 업데이트 아웃 데이터
-	//instance->_controller->WorldUpdateOutData(info);
-
+	// MONSTER
+	else {
+		MonsterInfo* monsterInfo = instance->FindMonster(protoActor.index());
+		if (monsterInfo) {
+			monsterInfo->SetLocation(protoActor.locationx(), protoActor.locationy(), protoActor.locationz());
+		}
+	}
+	
 	return true;
 }
 
 // 나의 공격도 서버로 부터 응답받고 처리하는 방식
 bool Handle_S_ATTACK(UMyGameInstance* instance, PROTOCOL::S_ATTACK fromPkt)
 {
-	TArray<PlayerInfo> playerInfoArray;
+	UE_LOG(LogTemp, Error, TEXT("Handle_S_ATTACK()"));
+	TArray<ActorInfo> playerInfoArray;
 	
 	// 공격자
-	PROTOCOL::PLAYER attackPlayer = fromPkt.attacker();
+	PROTOCOL::ACTOR protoAttacker = fromPkt.attacker();
 	
-	PlayerInfo attacker;
-	attacker.SetPlayerIndex(attackPlayer.playerid());
-	
-	playerInfoArray.Add(attacker);
+	// 공격자가 플레이어
+	if (protoAttacker.actortype() == PROTOCOL::PLAYER) {
+		PlayerInfo info;
+		info.SetIndex(protoAttacker.index());
+		info._rotation.Yaw = protoAttacker.rotationyaw();
+		playerInfoArray.Add(info);
+	}
+	else {
+		MonsterInfo info;
+		info.SetIndex(protoAttacker.index());
+		info._rotation.Yaw = protoAttacker.rotationyaw();
+		playerInfoArray.Add(info);
+	}
 
 	// 피격자
 	for (int i = 0; i < fromPkt.victims_size(); i++) {
-		PROTOCOL::PLAYER attackedPlayer = fromPkt.victims(i);
-		
-		PlayerInfo victim;
-		victim.SetPlayerIndex(attackedPlayer.playerid());
-		victim.SetHP(attackedPlayer.hp());
-
-		playerInfoArray.Add(victim);
+		PROTOCOL::ACTOR protoVictim = fromPkt.victims(i);
+		if (protoVictim.actortype() == PROTOCOL::PLAYER) {
+			PlayerInfo info;
+			info.SetIndex(protoVictim.index());
+			info.SetHP(protoVictim.hp());
+			playerInfoArray.Add(info);
+		}
+		else {
+			MonsterInfo info;
+			info.SetIndex(protoVictim.index());
+			info.SetHP(protoVictim.hp());
+			playerInfoArray.Add(info);
+		}
 	}
 
 	// 
-	instance->_controller->AttackUpdateOutData(playerInfoArray);
+	instance->_controller->UpdateAttackData(playerInfoArray);
 
 	return true;
 }
@@ -159,11 +206,11 @@ bool Handle_S_CHAT(UMyGameInstance* instance, PROTOCOL::S_CHAT fromPkt)
 {	
 	// PLAYER-1:채팅 내용
 	FString chat("Player-");
-	chat.Append(FString::FromInt(fromPkt.player().playerid()));
+	chat.Append(FString::FromInt(fromPkt.actor().index()));
 	chat.Append(": ");
 	chat.Append(fromPkt.text().c_str());
 
-	instance->_controller->ChatUpdateOutData(chat);
+	instance->_controller->UpdateChatData(chat);
 
 	return true;
 }
@@ -184,6 +231,9 @@ void ServerPacketHandler::Init()
 	};
 	_packetHandleFuncs[S_PLAYERLIST] = [this](UMyGameInstance* instance, uint8* buffer, int len) {
 		return HandlePacket<PROTOCOL::S_PLAYERLIST>(Handle_S_PLAYERLIST, instance, buffer, len);
+	};
+	_packetHandleFuncs[S_MONSTERLIST] = [this](UMyGameInstance* instance, uint8* buffer, int len) {
+		return HandlePacket<PROTOCOL::S_MONSTERLIST>(Handle_S_MONSTERLIST, instance, buffer, len);
 	};
 	_packetHandleFuncs[S_MOVE] = [this](UMyGameInstance* instance, uint8* buffer, int len) {
 		return HandlePacket<PROTOCOL::S_MOVE>(Handle_S_MOVE, instance, buffer, len);
@@ -221,6 +271,11 @@ TSharedPtr<MySendBuffer> ServerPacketHandler::MakeSendBuffer(PROTOCOL::C_ENTER_R
 TSharedPtr<MySendBuffer> ServerPacketHandler::MakeSendBuffer(PROTOCOL::C_PLAYERLIST toPkt)
 {
 	return MakeSendBuffer(toPkt, C_PLAYERLIST);
+}
+
+TSharedPtr<MySendBuffer> ServerPacketHandler::MakeSendBuffer(PROTOCOL::C_MONSTERLIST toPkt)
+{
+	return MakeSendBuffer(toPkt, C_MONSTERLIST);
 }
 
 TSharedPtr<MySendBuffer> ServerPacketHandler::MakeSendBuffer(PROTOCOL::C_MOVE toPkt)

@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include"proto/MyEnum.pb.h"
-#include"proto/MyStruct.pb.h"
-#include"proto/MyProtocol.pb.h"
+#include"proto/Enum3.pb.h"
+#include"proto/Struct3.pb.h"
+#include"proto/Protocol3.pb.h"
 #include"MyBuffer.h"
 
 #include "CoreMinimal.h"
@@ -32,6 +32,7 @@ enum PacketType {
 	C_LOGIN = 1, S_LOGIN,
 	C_ENTER_ROOM, S_ENTER_ROOM,
 	C_PLAYERLIST, S_PLAYERLIST,
+	C_MONSTERLIST, S_MONSTERLIST,
 	C_MOVE, S_MOVE,
 	C_ATTACK, S_ATTACK,
 	C_CHAT, S_CHAT,
@@ -41,6 +42,7 @@ bool Handle_INVALID(UMyGameInstance* instance, uint8* buffer, int len);
 bool Handle_S_LOGIN(UMyGameInstance* instance, PROTOCOL::S_LOGIN fromPkt);
 bool Handle_S_ENTER_ROOM(UMyGameInstance* instance, PROTOCOL::S_ENTER_ROOM fromPkt);
 bool Handle_S_PLAYERLIST(UMyGameInstance* instance, PROTOCOL::S_PLAYERLIST fromPkt);
+bool Handle_S_MONSTERLIST(UMyGameInstance* instance, PROTOCOL::S_MONSTERLIST fromPkt);
 bool Handle_S_MOVE(UMyGameInstance* instance, PROTOCOL::S_MOVE fromPkt);
 bool Handle_S_ATTACK(UMyGameInstance* instance, PROTOCOL::S_ATTACK fromPkt);
 bool Handle_S_CHAT(UMyGameInstance* instance, PROTOCOL::S_CHAT fromPkt);
@@ -61,6 +63,7 @@ public:
 	TSharedPtr<MySendBuffer> MakeSendBuffer(PROTOCOL::C_LOGIN toPkt);
 	TSharedPtr<MySendBuffer> MakeSendBuffer(PROTOCOL::C_ENTER_ROOM toPkt);
 	TSharedPtr<MySendBuffer> MakeSendBuffer(PROTOCOL::C_PLAYERLIST toPkt);
+	TSharedPtr<MySendBuffer> MakeSendBuffer(PROTOCOL::C_MONSTERLIST toPkt);
 	TSharedPtr<MySendBuffer> MakeSendBuffer(PROTOCOL::C_MOVE toPkt);
 	TSharedPtr<MySendBuffer> MakeSendBuffer(PROTOCOL::C_ATTACK toPkt);
 	TSharedPtr<MySendBuffer> MakeSendBuffer(PROTOCOL::C_CHAT toPkt);

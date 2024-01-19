@@ -7,9 +7,13 @@ void UMyGameInstance::Init()
 {
     // player list 준비
     for (uint64 i = 0; i < 50; i++) {
-        PlayerInfo playerInfo;
-        playerInfo._playerIndex = i;
-        _intPlayerInfoMap.Add(i, playerInfo);
+        PlayerInfo* playerInfo = new PlayerInfo();
+        playerInfo->SetIndex(i);
+        MonsterInfo* monsterInfo = new MonsterInfo();
+        monsterInfo->SetIndex(i);
+
+        _players.Add(i, playerInfo);
+        _monsters.Add(i, monsterInfo);
     }
 
     // NetSession, ServerPacketHandler 가동
@@ -35,4 +39,14 @@ bool UMyGameInstance::TryLogin(FString id, FString pw)
     _netSession->Send(sendBuffer);
 
     return true;
+}
+
+PlayerInfo* UMyGameInstance::FindPlayer(uint64 index)
+{
+    return *_players.Find(index);
+}
+
+MonsterInfo* UMyGameInstance::FindMonster(uint64 index)
+{
+    return *_monsters.Find(index);
 }

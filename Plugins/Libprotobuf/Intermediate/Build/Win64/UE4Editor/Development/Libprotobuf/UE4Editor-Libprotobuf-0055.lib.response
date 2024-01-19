@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UE4Editor-Libprotobuf-0055.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"C:\Users\see\Documents\Unreal Projects\MMOClient\Intermediate\Build\Win64\MMOClientEditor\Development\Engine\SharedPCH.Engine.ShadowErrors.h.obj"
+"C:\Users\see\Documents\Unreal Projects\MMOClient\Plugins\Libprotobuf\Intermediate\Build\Win64\UE4Editor\Development\Libprotobuf\Libprotobuf.cpp.obj"
+"C:\Users\see\Documents\Unreal Projects\MMOClient\Plugins\Libprotobuf\Intermediate\Build\Win64\UE4Editor\Development\Libprotobuf\Default.rc2.res"
+/OUT:"C:\Users\see\Documents\Unreal Projects\MMOClient\Plugins\Libprotobuf\Intermediate\Build\Win64\UE4Editor\Development\Libprotobuf\UE4Editor-Libprotobuf-0055.lib"

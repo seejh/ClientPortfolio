@@ -23,6 +23,9 @@ public:
 	virtual void Init() override;
 
 	bool TryLogin(FString id, FString pw);
+
+	PlayerInfo* FindPlayer(uint64 index);
+	MonsterInfo* FindMonster(uint64 index);
 public:
 	ULoginWidget* _loginWidget;
 
@@ -31,5 +34,6 @@ public:
 	AMyPlayerController* _controller;
 
 	uint64 _myPlayerIndex = 0;
-	TMap<uint64, PlayerInfo> _intPlayerInfoMap;
+	TMap<uint64, PlayerInfo*> _players;
+	TMap<uint64, MonsterInfo*> _monsters;
 };
