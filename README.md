@@ -6,3 +6,4 @@
 프로그램이 가동되면 로그인 창이 열리고 서버 소켓으로 Connect 요청을 합니다. 그리고 ID와 PW를 입력해서 로그인 버튼을 누르면 서버로 Login 요청을 하고
 Login 시도에 대한 성공 패킷을 받으면 게임 룸(월드)에 접속하게 됩니다. 여기서부터 게임이 시작되며 이동, 공격, 채팅 등을 할 수 있습니다. 
 
+![Client1](https://github.com/seejh/ClientPortfolio/assets/152791315/5d592811-141e-417d-87df-4bd0aca5cc32)
